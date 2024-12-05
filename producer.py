@@ -2,7 +2,7 @@ import time
 import random
 import json
 import datetime
-#from confluent_kafka import Producer
+from confluent_kafka import Producer
 
 # Define the set of actions and pages
 date_stamp = datetime.datetime(2023, 1, 1, 0, 0)
@@ -21,7 +21,7 @@ def read_config():
   # reads the client configuration from client.properties
   # and returns it as a key-value map
   config = {}
-  with open("TD/TD1/samples/client.properties") as fh:
+  with open("client.properties") as fh:
     for line in fh:
       line = line.strip()
       if len(line) != 0 and line[0] != "#":
@@ -71,7 +71,7 @@ def generate_log_entry():
         humidity_value = max (5, min(40, new_humidity_value))
 
     log_entry = {
-       "datestamp:": date_stamp,
+       "datestamp": date_stamp.isoformat(),
        "temperature": int(temperature_value),
         "humidity": humidity_value,
         "uv": int(uv_value),
@@ -80,10 +80,10 @@ def generate_log_entry():
     date_stamp += datetime.timedelta(hours=1)
 
     return log_entry
-
+"""
 for i in range(24):
     print(generate_log_entry())
-
+"""
 
 def produce(topic, config):
   # creates a new producer instance
@@ -95,7 +95,7 @@ def produce(topic, config):
     log_entry_json = json.dumps(log_entry)
         
     # Produce message to Kafka
-    producer.produce(topic, key=log_entry["order_id"], value=log_entry_json)
+    producer.produce(topic, key=log_entry["datestamp"], value=log_entry_json)
     print(f"Produced message to topic {topic}: {log_entry_json}")
 
     # send any outstanding or buffered messages to the Kafka broker
@@ -109,7 +109,7 @@ def main():
   cwd = os.getcwd()
   print(f"Current working directory: {cwd}")
   config = read_config()
-  topic = "project"
+  topic = "temperature"
   produce(topic, config)
 
 
