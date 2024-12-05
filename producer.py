@@ -121,14 +121,14 @@ def produce(topic1, topic2, config):
       log_entry_json = json.dumps(log_entry)
       # Produce message to Kafka
       producer.produce(topic2, key=log_entry["datestamp"], value=log_entry_json)
-      print(f"Produced message to topic {topic}: {log_entry_json}")
+      print(f"Produced message to topic {topic2}: {log_entry_json}")
       # send any outstanding or buffered messages to the Kafka broker
       producer.flush()
   
       log_entry = generate_topic2()            #topic 1
       log_entry_json = json.dumps(log_entry)
       producer.produce(topic1, key=log_entry["datestamp"], value=log_entry_json)
-      print(f"Produced message to topic {topic}: {log_entry_json}")
+      print(f"Produced message to topic {topic1}: {log_entry_json}")
       producer.flush()
   
       # Random delay between 0.1 and 1 second to simulate 1-10 messages per second
