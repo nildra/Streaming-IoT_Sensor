@@ -113,8 +113,8 @@ def generate_topic2():
 def produce(topic1, topic2, config):
   # creates a new producer instance
   producer = Producer(config)
-
   while True:
+    print("##############################################")
     for i in range(12):
       log_entry = generate_topic1()          #topic 2
       # Convert log entry to JSON format
