@@ -2,6 +2,7 @@ import time
 import random
 import json
 import datetime
+import sys
 from confluent_kafka import Producer
 
 # Define the set of actions and pages
@@ -135,12 +136,15 @@ def produce(topic1, topic2, config):
     time.sleep(30)
 
 def main():
+  if len(sys.argv) != 3:
+        print("The 2 topics aren't specified.")
+        sys.exit(-1)
   import os
   cwd = os.getcwd()
   print(f"Current working directory: {cwd}")
   config = read_config()
-  topic1 = "temperature"
-  topic2 = "uv"
+  topic1 = sys.argv[1]
+  topic2 = sys.argv[2]
   produce(topic1, topic2, config)
 
 
