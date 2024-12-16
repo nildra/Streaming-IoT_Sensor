@@ -68,12 +68,15 @@ if __name__ == "__main__":
         .selectExpr("CAST(value AS STRING)")
     
     
-    json_df_topic_temp = lines_topic_temp\
-            .select(F.from_json(lines_topic_temp.value, schema_topic_temp).alias("data")).select("data.*")                
-    json_df_topic_uv = lines_topic_uv\
-            .select(F.from_json(lines_topic_uv.value, schema_topic_uv).alias("data")).select("data.*")
+    windowed_temp = lines_topic_temp\
+            .select(F.from_json(lines_topic_temp.value, schema_topic_temp).alias("data")).select("data.*")\
+            .withWatermark("datestamp", "30 minutes") \
+             
+    windowed_uv = lines_topic_uv\
+            .select(F.from_json(lines_topic_uv.value, schema_topic_uv).alias("data")).select("data.*")\
+            .withWatermark("datestamp", "30 minutes") \
         
-    json_df = json_df_topic_uv.join(json_df_topic_temp, on="datestamp", how="inner")
+    json_df = windowed_temp.join(windowed_uv, on="datestamp", how="inner")
     
     def process_batch(batch_df, batch_id):
         print(f"### Batch ID {batch_id} ###")
