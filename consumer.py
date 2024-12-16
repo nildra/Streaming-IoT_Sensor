@@ -67,7 +67,6 @@ if __name__ == "__main__":
         .load()\
         .selectExpr("CAST(value AS STRING)")
     
-    
     windowed_temp = lines_topic_temp\
             .select(F.from_json(lines_topic_temp.value, schema_topic_temp).alias("data")).select("data.*")\
             .withWatermark("datestamp", "30 minutes") \
@@ -82,19 +81,19 @@ if __name__ == "__main__":
         try:
             print(f"### Batch ID {batch_id} ###")
             # Conditions that indicate thermal stress risks for crops
-            # Query 1) Identify days where temperature is under 0°C
-            positive_cold_room_uzero = batch_df.filter(batch_df.temperature < 0)
-            # Query 2) Identify days where temperature is above 5°C
-            positive_cold_room_afour = batch_df.filter(batch_df.temperature > 5)
-            # Query 3) Identify days where temperature is above 8° and UV index is above 3
+            # Query 1) Identify hours where temperature is under 0°C
+            temp_sensor_uzero = batch_df.filter(batch_df.temperature < 0)
+            # Query 2) Identify hours where temperature is above 5°C
+            temp_sensor_afive = batch_df.filter(batch_df.temperature > 5)
+            # Query 3) Identify hours where temperature is above 8°C and UV index is above 3
             stress_conditions = batch_df.filter((batch_df.temperature > 8) & (batch_df.uv > 3))
     
-            if positive_cold_room_uzero.count() > 0:
+            if temp_sensor_uzero.count() > 0:
                 print(f"/!\ Temperature is below 0°C !")
-                positive_cold_room_uzero.write.format("console").save()
-            if positive_cold_room_afour.count() > 0:
+                temp_sensor_uzero.write.format("console").save()
+            if temp_sensor_afive.count() > 0:
                 print(f"/!\ Temperature is above 5°C !")
-                positive_cold_room_afour.write.format("console").save()
+                temp_sensor_afive.write.format("console").save()
             if stress_conditions.count() > 0:
                 print(f"/!\ Temperature is above 8°C and UV index is above 3 !")
                 stress_conditions.write.format("console").save()
