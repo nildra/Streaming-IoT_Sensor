@@ -31,9 +31,8 @@ def read_config():
         config[parameter] = value.strip()
   return config
 
-      # DATA GENERATION
-
-def generate_topic1():
+# DATA GENERATION
+def generate_topic_temp():
     global date_stamp, temperature_value, humidity_value
     start_night = datetime.time(19, 0)  
     end_night = datetime.time(7, 0)    
@@ -72,7 +71,7 @@ def generate_topic1():
     }
     return log_entry
 
-def generate_topic2():
+def generate_topic_uv():
     global date_stamp, uv_value, wind_value  
     start_night = datetime.time(19, 0)  
     end_night = datetime.time(7, 0)    
@@ -108,44 +107,41 @@ def generate_topic2():
     date_stamp += datetime.timedelta(hours=1)
     return log_entry
 
-
-    # PRODUCER
-
-def produce(topic1, topic2, config):
+def produce(topic_temp, topic_uv, config):
   # creates a new producer instance
+  frequency = 12
   producer = Producer(config)
   while True:
-    print("##############################################")
-    for i in range(12):
-      log_entry = generate_topic1()          #topic 2
+    print(f"######## Sending {frequency} messages ########")
+    for i in range(frequency):
+      log_entry = generate_topic_temp() 
       # Convert log entry to JSON format
       log_entry_json = json.dumps(log_entry)
       # Produce message to Kafka
-      producer.produce(topic2, key=log_entry["datestamp"], value=log_entry_json)
-      print(f"Produced message to topic {topic2}: {log_entry_json}")
+      producer.produce(topic_temp, key=log_entry["datestamp"], value=log_entry_json)
+      print(f"Produced message to topic {topic_temp}: {log_entry_json}")
       # send any outstanding or buffered messages to the Kafka broker
       producer.flush()
   
-      log_entry = generate_topic2()            #topic 1
+      log_entry = generate_topic_uv()    
       log_entry_json = json.dumps(log_entry)
-      producer.produce(topic1, key=log_entry["datestamp"], value=log_entry_json)
-      print(f"Produced message to topic {topic1}: {log_entry_json}")
+      producer.produce(topic_uv, key=log_entry["datestamp"], value=log_entry_json)
+      print(f"Produced message to topic {topic_uv}: {log_entry_json}")
       producer.flush()
   
-      # Random delay between 0.1 and 1 second to simulate 1-10 messages per second
     time.sleep(30)
 
 def main():
   if len(sys.argv) != 3:
-        print("The 2 topics aren't specified.")
+        print("Usage: producer.py <topic_temp> <topic_uv>")
         sys.exit(-1)
   import os
   cwd = os.getcwd()
   print(f"Current working directory: {cwd}")
   config = read_config()
-  topic1 = sys.argv[1]
-  topic2 = sys.argv[2]
-  produce(topic1, topic2, config)
+  topic_temp = sys.argv[1]
+  topic_uv = sys.argv[2]
+  produce(topic_temp, topic_uv, config)
 
 
 main()
