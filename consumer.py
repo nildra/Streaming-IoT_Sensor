@@ -12,15 +12,15 @@ os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-streaming
 if __name__ == "__main__":
     if len(sys.argv) != 5:
         print("""
-        Usage: structured_kafka_wordcount.py <bootstrap-servers> <subscribe-type> <topic_temp> <topic_uv>
+        Usage: consumer.py <bootstrap-servers> <subscribe-type> <topic_temp> <topic_uv>
         """, file=sys.stderr)
         sys.exit(-1)
 
     bootstrapServers = sys.argv[1]
     #subscribeType should be "subscribe" in this exercise.
     subscribeType = sys.argv[2]
-    topic_1 = sys.argv[3]
-    topic_2 = sys.argv[4]
+    topic_temp = sys.argv[3]
+    topic_uv = sys.argv[4]
 
     spark = SparkSession\
         .builder\
@@ -28,53 +28,52 @@ if __name__ == "__main__":
         .getOrCreate()
     spark.sparkContext.setLogLevel("ERROR")
     
-    schema_topic_1 = StructType([
+    schema_topic_temp = StructType([
         StructField("datestamp", TimestampType(), True), 
         StructField("temperature", IntegerType(), True),
         StructField("humidity", IntegerType(), True)
     ])
 
-    schema_topic_2 = StructType([
+    schema_topic_uv = StructType([
         StructField("datestamp", TimestampType(), True),  
         StructField("uv", IntegerType(), True),
         StructField("wind", IntegerType(), True)
     ])
 
     # Create DataSet representing the stream of input lines from kafka
-    
-    lines_topic_1 = spark\
+    lines_topic_temp = spark\
         .readStream\
         .format("kafka")\
         .option("kafka.bootstrap.servers", bootstrapServers)\
         .option("kafka.sasl.mechanism", "PLAIN")\
         .option("kafka.security.protocol", "SASL_SSL")\
-        .option("kafka.sasl.jaas.config", """org.apache.kafka.common.security.scram.ScramLoginModule required username="ZBJ7RMDHM5E2YXBE" password="ZgcrCbBCsUWYBT6x4YmkV8j+Rq7/xojOiWQ9H7Bd27ScgZIxVOtNxIPjoZMweuHw";""")\
+        .option("kafka.sasl.jaas.config", """org.apache.kafka.common.security.scram.ScramLoginModule required username="USERNAME" password="PASSWORD";""")\
         .option("startingOffsets", "earliest")\
-        .option(subscribeType, topic_1)\
+        .option(subscribeType, topic_temp)\
         .option("auto.offset.reset", "earliest")\
         .load()\
         .selectExpr("CAST(value AS STRING)")
     
-    lines_topic_2 = spark\
+    lines_topic_uv = spark\
         .readStream\
         .format("kafka")\
         .option("kafka.bootstrap.servers", bootstrapServers)\
         .option("kafka.sasl.mechanism", "PLAIN")\
         .option("kafka.security.protocol", "SASL_SSL")\
-        .option("kafka.sasl.jaas.config", """org.apache.kafka.common.security.scram.ScramLoginModule required username="ZBJ7RMDHM5E2YXBE" password="ZgcrCbBCsUWYBT6x4YmkV8j+Rq7/xojOiWQ9H7Bd27ScgZIxVOtNxIPjoZMweuHw";""")\
+        .option("kafka.sasl.jaas.config", """org.apache.kafka.common.security.scram.ScramLoginModule required username="USERNAME" password="PASSWORD";""")\
         .option("startingOffsets", "earliest")\
-        .option(subscribeType, topic_2)\
+        .option(subscribeType, topic_uv)\
         .option("auto.offset.reset", "earliest")\
         .load()\
         .selectExpr("CAST(value AS STRING)")
     
     
-    json_df_topic_1 = lines_topic_1\
-            .select(F.from_json(lines_topic_1.value, schema_topic_2).alias("data")).select("data.*")                
-    json_df_topic_2 = lines_topic_2\
-            .select(F.from_json(lines_topic_2.value, schema_topic_1).alias("data")).select("data.*")
+    json_df_topic_temp = lines_topic_temp\
+            .select(F.from_json(lines_topic_temp.value, schema_topic_temp).alias("data")).select("data.*")                
+    json_df_topic_uv = lines_topic_uv\
+            .select(F.from_json(lines_topic_uv.value, schema_topic_uv).alias("data")).select("data.*")
         
-    json_df = json_df_topic_2.join(json_df_topic_1, on="datestamp", how="inner")
+    json_df = json_df_topic_uv.join(json_df_topic_temp, on="datestamp", how="inner")
     
     def process_batch(batch_df, batch_id):
         print(f"### Batch ID {batch_id} ###")
@@ -102,4 +101,3 @@ if __name__ == "__main__":
         .start()
 
     query_1.awaitTermination()
-
