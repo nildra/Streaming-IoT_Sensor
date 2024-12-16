@@ -79,24 +79,27 @@ if __name__ == "__main__":
     json_df = windowed_temp.join(windowed_uv, on="datestamp", how="inner")
     
     def process_batch(batch_df, batch_id):
-        print(f"### Batch ID {batch_id} ###")
-        # Conditions that indicate thermal stress risks for crops
-        # Query 1) Identify days where temperature is under 0°C
-        positive_cold_room_uzero = batch_df.filter(batch_df.temperature < 0)
-        # Query 2) Identify days where temperature is above 5°C
-        positive_cold_room_afour = batch_df.filter(batch_df.temperature > 5)
-        # Query 3) Identify days where temperature is above 8° and UV index is above 3
-        stress_conditions = batch_df.filter((batch_df.temperature > 8) & (batch_df.uv > 3))
-
-        if positive_cold_room_uzero.count() > 0:
-            print(f"/!\ Temperature is below 0°C !")
-            positive_cold_room_uzero.write.format("console").save()
-        if positive_cold_room_afour.count() > 0:
-            print(f"/!\ Temperature is above 5°C !")
-            positive_cold_room_afour.write.format("console").save()
-        if stress_conditions.count() > 0:
-            print(f"/!\ Temperature is above 8°C and UV index is above 3 !")
-            stress_conditions.write.format("console").save()
+        try:
+            print(f"### Batch ID {batch_id} ###")
+            # Conditions that indicate thermal stress risks for crops
+            # Query 1) Identify days where temperature is under 0°C
+            positive_cold_room_uzero = batch_df.filter(batch_df.temperature < 0)
+            # Query 2) Identify days where temperature is above 5°C
+            positive_cold_room_afour = batch_df.filter(batch_df.temperature > 5)
+            # Query 3) Identify days where temperature is above 8° and UV index is above 3
+            stress_conditions = batch_df.filter((batch_df.temperature > 8) & (batch_df.uv > 3))
+    
+            if positive_cold_room_uzero.count() > 0:
+                print(f"/!\ Temperature is below 0°C !")
+                positive_cold_room_uzero.write.format("console").save()
+            if positive_cold_room_afour.count() > 0:
+                print(f"/!\ Temperature is above 5°C !")
+                positive_cold_room_afour.write.format("console").save()
+            if stress_conditions.count() > 0:
+                print(f"/!\ Temperature is above 8°C and UV index is above 3 !")
+                stress_conditions.write.format("console").save()
+        except Exception as e:
+            print(f"Error while processing batch {batch_id} : {e}")
     
     query_1 = json_df.writeStream\
         .outputMode("append")\
